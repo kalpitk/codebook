@@ -1,98 +1,104 @@
-// This is set up for range minimum queries, but can be easily adapted for computing other quantities.
-// To enable lazy propagation and range updates, uncomment the following line.
-// #define LAZY
-struct Segtree {
-	int n;
-	vector<int> data;
-#ifdef LAZY
-#define NOLAZY 2e9
-#define GET(node) (lazy[node] == NOLAZY ? data[node] : lazy[node])
-	vector<int> lazy;
-#else
-#define GET(node) data[node]
-#endif
-	void build_rec(int node, int* begin, int* end) {
-		if (end == begin+1) {
-			if (data.size() <= node) data.resize(node+1);
-			data[node] = *begin;
-		} else {
-			int* mid = begin + (end-begin+1)/2;
-			build_rec(2*node+1, begin, mid);
-			build_rec(2*node+2, mid, end);
-			data[node] = min(data[2*node+1], data[2*node+2]);
-		}
-	}
-#ifndef LAZY
-	void update_rec(int node, int begin, int end, int pos, int val) {
-		if (end == begin+1) {
-			data[node] = val;
-		} else {
-			int mid = begin + (end-begin+1)/2;
-			if (pos < mid) {
-				update_rec(2*node+1, begin, mid, pos, val);
-			} else {
-				update_rec(2*node+2, mid, end, pos, val);
-			}
-			data[node] = min(data[2*node+1], data[2*node+2]);
-		}
-	}
-#else
-	void update_range_rec(int node, int tbegin, int tend, int abegin, int aend, int val) {
-		if (tbegin >= abegin && tend <= aend) {
-			lazy[node] = val;
-		} else {
-			int mid = tbegin + (tend - tbegin + 1)/2;
-			if (lazy[node] != NOLAZY) {
-				lazy[2*node+1] = lazy[2*node+2] = lazy[node]; lazy[node] = NOLAZY;
-			}
-			if (mid > abegin && tbegin < aend)
-				update_range_rec(2*node+1, tbegin, mid, abegin, aend, val);
-			if (tend > abegin && mid < aend)
-				update_range_rec(2*node+2, mid, tend, abegin, aend, val);
-			data[node] = min(GET(2*node+1), GET(2*node+2));
-		}
-	}
-#endif
-	int query_rec(int node, int tbegin, int tend, int abegin, int aend) {
-		if (tbegin >= abegin && tend <= aend) {
-			return GET(node);
-		} else {
-#ifdef LAZY
-			if (lazy[node] != NOLAZY) {
-				data[node] = lazy[2*node+1] = lazy[2*node+2] = lazy[node]; lazy[node] = NOLAZY;
-			}
-#endif
-			int mid = tbegin + (tend - tbegin + 1)/2;
-			int res = INT_MAX;
-			if (mid > abegin && tbegin < aend) 
-				res = min(res, query_rec(2*node+1, tbegin, mid, abegin, aend));
-			if (tend > abegin && mid < aend)
-				res = min(res, query_rec(2*node+2, mid, tend, abegin, aend));
-			return res;
-		}
-	}
-
-	// Create a segtree which stores the range [begin, end) in its bottommost level.
-	Segtree(int* begin, int* end): n(end - begin) {
-		build_rec(0, begin, end);
-#ifdef LAZY
-		lazy.assign(data.size(), NOLAZY);
-#endif
-	}
-
-#ifndef LAZY
-	// Call this to update a value (indices are 0-based). If lazy propagation is enabled, use update_range(pos, pos+1, val) instaed.
-	void update(int pos, int val) {
-		update_rec(0, 0, n, pos, val);
-	}
-#else 
-	// Call this to update range [begin, end), if lazy propagation is enabled. Indices are 0-based.
-	void update_range(int begin, int end, int val) {
-		update_range_rec(0, 0, n, begin, end, val);
-	}
-#endif
-	// Returns minimum in range [begin, end). Indices are 0-based.
-	int query(int begin, int end) {
-		return query_rec(0, 0, n, begin, end);
-	}
-};
+// Segment Tree
+int tree[MAX] = {0};  // To store segment tree 
+int lazy[MAX] = {0};  // To store pending updates  
+/*  si -> index of current node in segment tree 
+    ss and se -> Starting and ending indexes of elements for 
+                 which current nodes stores sum. 
+    us and ue -> starting and ending indexes of update query 
+    diff -> which we need to add in the range us to ue */
+void updateRangeUtil(int si, int ss, int se, int us, 
+                     int ue, int diff) { 
+    // If lazy value is non-zero for current node of segment 
+    // tree, then there are some pending updates. So we need 
+    // to make sure that the pending updates are done before 
+    // making new updates. Because this value may be used by 
+    // parent after recursive calls (See last line of this 
+    // function) 
+    if (lazy[si] != 0) { 
+        // Make pending updates using value stored
+        // in lazy nodes 
+        tree[si] += (se-ss+1)*lazy[si]; 
+  
+        // checking if it is not leaf node because if 
+        // it is leaf node then we cannot go further 
+        if (ss != se) { 
+            lazy[si*2 + 1]   += lazy[si]; 
+            lazy[si*2 + 2]   += lazy[si]; 
+        } 
+        lazy[si] = 0; 
+    } 
+  
+    // out of range 
+    if (ss>se || ss>ue || se<us) 
+        return ; 
+  
+    // Current segment is fully in range 
+    if (ss>=us && se<=ue) 
+    { 
+        // Add the difference to current node 
+        tree[si] += (se-ss+1)*diff; 
+  
+        // same logic for checking leaf node or not 
+        if (ss != se) 
+        { 
+            // This is where we store values in lazy nodes, 
+            // rather than updating the segment tree itelf 
+            // Since we don't need these updated values now 
+            // we postpone updates by storing values in lazy[] 
+            lazy[si*2 + 1]   += diff; 
+            lazy[si*2 + 2]   += diff; 
+        } 
+        return; 
+    } 
+  
+    // If not completely in rang, but overlaps, recur for 
+    // children, 
+    int mid = (ss+se)/2; 
+    updateRangeUtil(si*2+1, ss, mid, us, ue, diff); 
+    updateRangeUtil(si*2+2, mid+1, se, us, ue, diff); 
+  
+    // And use the result of children calls to update this 
+    // node 
+    tree[si] = tree[si*2+1] + tree[si*2+2]; 
+} 
+  
+// Update function
+/*  us and eu -> starting and ending indexes of update query 
+    ue  -> ending index of update query 
+    diff -> which we need to add in the range us to ue */
+void updateRange(int n, int us, int ue, int diff) 
+{ 
+   updateRangeUtil(0, 0, n-1, us, ue, diff); 
+} 
+  
+  
+/*  Query function
+    si --> Index of current node in the segment tree. 
+           Initially 0 is passed as root is always at' 
+           index 0 
+    ss & se  --> Starting and ending indexes of the 
+                 segment represented by current node, 
+                 i.e., tree[si] 
+    qs & qe  --> Starting and ending indexes of query 
+                 range */
+int getSumUtil(int ss, int se, int qs, int qe, int si) 
+{ 
+    if (lazy[si] != 0) 
+    { 
+        tree[si] += (se-ss+1)*lazy[si]; 
+        if (ss != se) {
+            lazy[si*2+1] += lazy[si]; 
+            lazy[si*2+2] += lazy[si]; 
+        }
+        lazy[si] = 0; 
+    } 
+  
+    if (ss>se||ss>qe||se<qs)return 0; 
+  
+    if (ss>=qs && se<=qe) return tree[si]; 
+  
+    int mid = (ss + se)/2; 
+    return getSumUtil(ss, mid, qs, qe, 2*si+1) + 
+           getSumUtil(mid+1, se, qs, qe, 2*si+2); 
+} 
+  
