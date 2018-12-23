@@ -1,3 +1,4 @@
+/* Strongly connected components */
 struct SCC {
     int V, group_cnt;
     vector<vector<int> > adj, radj;
