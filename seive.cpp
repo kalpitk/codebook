@@ -1,4 +1,4 @@
-// This is the famous "Yarin sieve", for use when memory is tight.
+// Seive - Low Memory
 #define MAXSIEVE 100000000 // All prime numbers up to this
 #define MAXSIEVEHALF (MAXSIEVE/2)
 #define MAXSQRT 5000 // sqrt(MAXSIEVE)/2
