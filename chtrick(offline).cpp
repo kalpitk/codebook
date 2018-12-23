@@ -1,4 +1,5 @@
-//this can be used only in offline manner as add_line must be done in increasing order of slopes of the lines
+// Convex Hull Trick - this can be used only in offline manner as add_line
+// must be done in increasing order of slopes of the lines
 typedef complex<int> point;
 #define x real
 #define y imag
