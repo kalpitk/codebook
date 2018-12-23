@@ -1,5 +1,6 @@
 // O(N log N) Monotone Chains algorithm for 2d convex hull.
-// Gives the hull in counterclockwise order from the leftmost point, which is repeated at the end. Minimizes the number of points on the hull when collinear points exist.
+// Gives the hull in counterclockwise order from the leftmost point, which is repeated at the end.
+//Minimizes the number of points on the hull when collinear points exist.
 long long cross(pair<int, int> A, pair<int, int> B, pair<int, int> C) {
 	return (B.first - A.first)*(C.second - A.second)
 	     - (B.second - A.second)*(C.first - A.first);
@@ -21,4 +22,3 @@ void convex_hull(vector<pair<int, int> > pts, vector<pair<int, int> >& hull) {
 		hull.push_back(pts[i]);
 	}
 }
-
